@@ -1,0 +1,181 @@
+service: photoAlbumApp
+frameworkVersion: '2'
+
+plugins:
+  - serverless-iam-roles-per-function
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  lambdaHashingVersion: 20201221
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'eu-central-1'}
+  environment:
+    ALBUM_TABLE_NAME: album-table-photo-album-app-${self:provider.stage}
+    PHOTO_TABLE_NAME: photo-table-photo-album-app-${self:provider.stage}
+    PHOTOS_S3_BUCKET_NAME: photos-bucket-photo-album-app-${self:provider.stage}
+    PUT_SIGNED_URL_EXPIRATION: 300
+    GET_SIGNED_URL_EXPIRATION: 86400
+  httpApi:
+    cors: true
+    authorizers:
+      jwtAuthorizer:
+        identitySource: $request.header.Authorization
+        issuerUrl:
+          Fn::Join:
+            - ''
+            - - 'https://cognito-idp.'
+              - '${opt:region, self:provider.region}'
+              - '.amazonaws.com/'
+              - Ref: CognitoUserPool
+        audience:
+          - Ref: CognitoUserPoolClient
+functions:
+  generateUploadUrl:
+    handler: src/lambda/generateUploadUrl.handler
+    events:
+      - httpApi:
+          path: /generate-upload-url
+          method: post
+          authorizer: jwtAuthorizer
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - s3:PutObject
+        Resource: arn:aws:s3:::${self:provider.environment.PHOTOS_S3_BUCKET_NAME}/*
+      - Effect: Allow
+        Action:
+          - dynamodb:PutItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.PHOTO_TABLE_NAME}
+      - Effect: Allow
+        Action:
+          - dynamodb:GetItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.ALBUM_TABLE_NAME}
+  createAlbum:
+    handler: src/lambda/createAlbum.handler
+    events:
+      - httpApi:
+          path: /album
+          method: post
+          authorizer: jwtAuthorizer
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:PutItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.ALBUM_TABLE_NAME}
+  getAlbum:
+    handler: src/lambda/getAlbum.handler
+    events:
+      - httpApi:
+          path: /album/{albumId}
+          method: get
+          authorizer: jwtAuthorizer
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:Query
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.PHOTO_TABLE_NAME}
+      - Effect: Allow
+        Action:
+          - dynamodb:GetItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.ALBUM_TABLE_NAME}
+      - Effect: Allow
+        Action:
+          - s3:GetObject
+        Resource: arn:aws:s3:::${self:provider.environment.PHOTOS_S3_BUCKET_NAME}/*
+resources:
+  Resources:
+    CognitoUserPool:
+      Type: "AWS::Cognito::UserPool"
+      Properties:
+        UserPoolName: photoAlbumApp-user-pool-${self:provider.stage}
+        UsernameAttributes:
+          - email
+        AutoVerifiedAttributes:
+          - email
+        AccountRecoverySetting:
+          RecoveryMechanisms:
+            - Name: verified_email
+              Priority: 1
+        Policies:
+          PasswordPolicy:
+            MinimumLength: 8
+            RequireNumbers: True
+            RequireSymbols: True
+    CognitoUserPoolClient:
+      Type: "AWS::Cognito::UserPoolClient"
+      Properties:
+        ClientName: photoAlbumApp-user-pool-client-${self:provider.stage}
+        SupportedIdentityProviders: ["COGNITO"]
+        AllowedOAuthFlowsUserPoolClient: true
+        AllowedOAuthFlows: ["implicit"]
+        CallbackURLs: ["http://localhost:3000/callback"]
+        LogoutURLs: ["http://localhost:3000/logout"]
+        DefaultRedirectURI: "http://localhost:3000/callback"
+        AllowedOAuthScopes: ["phone", "email", "openid", "profile", "aws.cognito.signin.user.admin"]
+        GenerateSecret: false
+        AccessTokenValidity: 24
+        UserPoolId:
+          Ref: CognitoUserPool
+    CognitoUserPoolDomain:
+      Type: AWS::Cognito::UserPoolDomain
+      Properties:
+        Domain: photo-album-app-${self:provider.stage}
+        UserPoolId:
+          Ref: CognitoUserPool
+    PhotosBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:provider.environment.PHOTOS_S3_BUCKET_NAME}
+        CorsConfiguration:
+          CorsRules:
+            - AllowedOrigins:
+                - '*'
+              AllowedHeaders:
+                - '*'
+              AllowedMethods:
+                - GET
+                - PUT
+                - POST
+                - DELETE
+                - HEAD
+              MaxAge: 3000
+    AlbumTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.ALBUM_TABLE_NAME}
+        AttributeDefinitions:
+          - AttributeName: albumId
+            AttributeType: S
+          - AttributeName: userId
+            AttributeType: S
+          - AttributeName: createdAt
+            AttributeType: S
+        KeySchema:
+          - AttributeName: albumId
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+        GlobalSecondaryIndexes:
+          - IndexName: album-table-user-index-photo-album-app-${self:provider.stage}
+            KeySchema:
+              - AttributeName: userId
+                KeyType: HASH
+              - AttributeName: createdAt
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+    PhotoTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.PHOTO_TABLE_NAME}
+        AttributeDefinitions:
+          - AttributeName: albumId
+            AttributeType: S
+          - AttributeName: createdAt
+            AttributeType: S
+        KeySchema:
+          - AttributeName: albumId
+            KeyType: HASH
+          - AttributeName: createdAt
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
