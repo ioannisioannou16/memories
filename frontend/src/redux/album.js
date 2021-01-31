@@ -2,6 +2,7 @@ import api from '../api';
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
 
 export const createAlbum = createAsyncThunk('album/createNew', () => api.createAlbum())
+export const deleteAlbum = createAsyncThunk('album/delete', (albumId) => api.deleteAlbum(albumId))
 
 const albumSlice = createSlice({
   name: 'album',

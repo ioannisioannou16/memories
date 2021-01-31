@@ -35,9 +35,15 @@ const fetchAlbum = async (albumId) => {
   return result.data;
 }
 
+const deleteAlbum = async (albumId) => {
+  const result = await axios.delete(`${BASE_URL}/album/${albumId}`)
+  return result.data;
+}
+
 export default {
   initialise,
   generateUploadUrl,
   createAlbum,
-  fetchAlbum
+  fetchAlbum,
+  deleteAlbum
 }

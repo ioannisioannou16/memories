@@ -136,6 +136,12 @@
               "LogGroupName": "/aws/lambda/photoAlbumApp-dev-getAlbum"
             }
           },
+          "DeleteAlbumLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/photoAlbumApp-dev-deleteAlbum"
+            }
+          },
           "IamRoleLambdaExecution": {
             "Type": "AWS::IAM::Role",
             "Properties": {
@@ -220,7 +226,7 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/photoAlbumApp/dev/1612123223223-2021-01-31T20:00:23.223Z/photoAlbumApp.zip"
+                "S3Key": "serverless/photoAlbumApp/dev/1612127900994-2021-01-31T21:18:20.994Z/photoAlbumApp.zip"
               },
               "Handler": "src/lambda/generateUploadUrl.handler",
               "Runtime": "nodejs12.x",
@@ -255,7 +261,7 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/photoAlbumApp/dev/1612123223223-2021-01-31T20:00:23.223Z/photoAlbumApp.zip"
+                "S3Key": "serverless/photoAlbumApp/dev/1612127900994-2021-01-31T21:18:20.994Z/photoAlbumApp.zip"
               },
               "Handler": "src/lambda/createAlbum.handler",
               "Runtime": "nodejs12.x",
@@ -290,7 +296,7 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/photoAlbumApp/dev/1612123223223-2021-01-31T20:00:23.223Z/photoAlbumApp.zip"
+                "S3Key": "serverless/photoAlbumApp/dev/1612127900994-2021-01-31T21:18:20.994Z/photoAlbumApp.zip"
               },
               "Handler": "src/lambda/getAlbum.handler",
               "Runtime": "nodejs12.x",
@@ -318,34 +324,79 @@
               "GetAlbumLogGroup"
             ]
           },
-          "GenerateUploadUrlLambdaVersionvQki1PNc4jpghKndmxwkf761OLBxIWtgQUSuKblccAc": {
+          "DeleteAlbumLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": {
+                  "Ref": "ServerlessDeploymentBucket"
+                },
+                "S3Key": "serverless/photoAlbumApp/dev/1612127900994-2021-01-31T21:18:20.994Z/photoAlbumApp.zip"
+              },
+              "Handler": "src/lambda/deleteAlbum.handler",
+              "Runtime": "nodejs12.x",
+              "FunctionName": "photoAlbumApp-dev-deleteAlbum",
+              "MemorySize": 1024,
+              "Timeout": 6,
+              "Environment": {
+                "Variables": {
+                  "ALBUM_TABLE_NAME": "album-table-photo-album-app-dev",
+                  "PHOTO_TABLE_NAME": "photo-table-photo-album-app-dev",
+                  "PHOTOS_S3_BUCKET_NAME": "photos-bucket-photo-album-app-dev",
+                  "PUT_SIGNED_URL_EXPIRATION": "300",
+                  "GET_SIGNED_URL_EXPIRATION": "86400"
+                }
+              },
+              "Role": {
+                "Fn::GetAtt": [
+                  "DeleteAlbumIamRoleLambdaExecution",
+                  "Arn"
+                ]
+              }
+            },
+            "DependsOn": [
+              "DeleteAlbumIamRoleLambdaExecution",
+              "DeleteAlbumLogGroup"
+            ]
+          },
+          "GenerateUploadUrlLambdaVersionubppLritMHTSjj69lK8CrwOL32Bj8vJCAcvm5ABrY": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
                 "Ref": "GenerateUploadUrlLambdaFunction"
               },
-              "CodeSha256": "V4oQNah9lWDbdGqOo6fL1Cf3yqkbPyewRC7rd4IXLiw="
+              "CodeSha256": "7deFa56gX/OKytXE+d5gM5JUy+/iVnDF+PVAexRqWdQ="
             }
           },
-          "CreateAlbumLambdaVersionxoIc9UICyBrUj2cyzJhZLmeZ9P5ksL8c03qDf7BSP0": {
+          "CreateAlbumLambdaVersionvZHvqLCV5urWkDIiKrTHznvzO06GtsjZJ4ZHHQDbs": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
                 "Ref": "CreateAlbumLambdaFunction"
               },
-              "CodeSha256": "V4oQNah9lWDbdGqOo6fL1Cf3yqkbPyewRC7rd4IXLiw="
+              "CodeSha256": "7deFa56gX/OKytXE+d5gM5JUy+/iVnDF+PVAexRqWdQ="
             }
           },
-          "GetAlbumLambdaVersionK2ElTYEz7c1xoi4tyeidppMR1eRhRn66JYVxeaNLw": {
+          "GetAlbumLambdaVersionIsqRTKk74NwH7nhJvPldYkCHbJBDmdPSQGcS6lvt2c": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
                 "Ref": "GetAlbumLambdaFunction"
               },
-              "CodeSha256": "V4oQNah9lWDbdGqOo6fL1Cf3yqkbPyewRC7rd4IXLiw="
+              "CodeSha256": "7deFa56gX/OKytXE+d5gM5JUy+/iVnDF+PVAexRqWdQ="
+            }
+          },
+          "DeleteAlbumLambdaVersionltp1tgFwyAv5aMUTYEgvd21GtcR2IJGgKTjmLDFKrs": {
+            "Type": "AWS::Lambda::Version",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "DeleteAlbumLambdaFunction"
+              },
+              "CodeSha256": "7deFa56gX/OKytXE+d5gM5JUy+/iVnDF+PVAexRqWdQ="
             }
           },
           "HttpApi": {
@@ -365,7 +416,8 @@
                 "AllowMethods": [
                   "OPTIONS",
                   "POST",
-                  "GET"
+                  "GET",
+                  "DELETE"
                 ],
                 "AllowOrigins": [
                   "*"
@@ -637,6 +689,82 @@
             },
             "DependsOn": "HttpApiIntegrationGetAlbum"
           },
+          "DeleteAlbumLambdaPermissionHttpApi": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+              "FunctionName": {
+                "Fn::GetAtt": [
+                  "DeleteAlbumLambdaFunction",
+                  "Arn"
+                ]
+              },
+              "Action": "lambda:InvokeFunction",
+              "Principal": "apigateway.amazonaws.com",
+              "SourceArn": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition"
+                    },
+                    ":execute-api:",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    ":",
+                    {
+                      "Ref": "AWS::AccountId"
+                    },
+                    ":",
+                    {
+                      "Ref": "HttpApi"
+                    },
+                    "/*"
+                  ]
+                ]
+              }
+            }
+          },
+          "HttpApiIntegrationDeleteAlbum": {
+            "Type": "AWS::ApiGatewayV2::Integration",
+            "Properties": {
+              "ApiId": {
+                "Ref": "HttpApi"
+              },
+              "IntegrationType": "AWS_PROXY",
+              "IntegrationUri": {
+                "$ref": "$[\"service\"][\"provider\"][\"compiledCloudFormationTemplate\"][\"Resources\"][\"DeleteAlbumLambdaPermissionHttpApi\"][\"Properties\"][\"FunctionName\"]"
+              },
+              "PayloadFormatVersion": "2.0",
+              "TimeoutInMillis": 6500
+            }
+          },
+          "HttpApiRouteDeleteAlbumAlbumidVar": {
+            "Type": "AWS::ApiGatewayV2::Route",
+            "Properties": {
+              "ApiId": {
+                "Ref": "HttpApi"
+              },
+              "RouteKey": "DELETE /album/{albumId}",
+              "Target": {
+                "Fn::Join": [
+                  "/",
+                  [
+                    "integrations",
+                    {
+                      "Ref": "HttpApiIntegrationDeleteAlbum"
+                    }
+                  ]
+                ]
+              },
+              "AuthorizationType": "JWT",
+              "AuthorizerId": {
+                "Ref": "HttpApiAuthorizerJwtAuthorizer"
+              }
+            },
+            "DependsOn": "HttpApiIntegrationDeleteAlbum"
+          },
           "GenerateUploadUrlIamRoleLambdaExecution": {
             "Type": "AWS::IAM::Role",
             "Properties": {
@@ -893,6 +1021,96 @@
               "ManagedPolicyArns": []
             }
           },
+          "DeleteAlbumIamRoleLambdaExecution": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+              "AssumeRolePolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Effect": "Allow",
+                    "Principal": {
+                      "Service": [
+                        "lambda.amazonaws.com"
+                      ]
+                    },
+                    "Action": [
+                      "sts:AssumeRole"
+                    ]
+                  }
+                ]
+              },
+              "Policies": [
+                {
+                  "PolicyName": {
+                    "Fn::Join": [
+                      "-",
+                      [
+                        "photoAlbumApp",
+                        "dev",
+                        "lambda"
+                      ]
+                    ]
+                  },
+                  "PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "logs:CreateLogStream",
+                          "logs:CreateLogGroup",
+                          "logs:PutLogEvents"
+                        ],
+                        "Resource": [
+                          {
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/photoAlbumApp-dev-deleteAlbum:*:*"
+                          }
+                        ]
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "dynamodb:DeleteItem"
+                        ],
+                        "Resource": "arn:aws:dynamodb:eu-central-1:*:table/album-table-photo-album-app-dev"
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "dynamodb:BatchWriteItem"
+                        ],
+                        "Resource": "arn:aws:dynamodb:eu-central-1:*:table/photo-table-photo-album-app-dev"
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "dynamodb:Query"
+                        ],
+                        "Resource": "arn:aws:dynamodb:eu-central-1:*:table/photo-table-photo-album-app-dev"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "Path": "/",
+              "RoleName": {
+                "Fn::Join": [
+                  "-",
+                  [
+                    "photoAlbumApp",
+                    "dev",
+                    "deleteAlbum",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    "lambdaRole"
+                  ]
+                ]
+              },
+              "ManagedPolicyArns": []
+            }
+          },
           "CognitoUserPool": {
             "Type": "AWS::Cognito::UserPool",
             "Properties": {
@@ -1069,19 +1287,25 @@
           "GenerateUploadUrlLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "GenerateUploadUrlLambdaVersionvQki1PNc4jpghKndmxwkf761OLBxIWtgQUSuKblccAc"
+              "Ref": "GenerateUploadUrlLambdaVersionubppLritMHTSjj69lK8CrwOL32Bj8vJCAcvm5ABrY"
             }
           },
           "CreateAlbumLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "CreateAlbumLambdaVersionxoIc9UICyBrUj2cyzJhZLmeZ9P5ksL8c03qDf7BSP0"
+              "Ref": "CreateAlbumLambdaVersionvZHvqLCV5urWkDIiKrTHznvzO06GtsjZJ4ZHHQDbs"
             }
           },
           "GetAlbumLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "GetAlbumLambdaVersionK2ElTYEz7c1xoi4tyeidppMR1eRhRn66JYVxeaNLw"
+              "Ref": "GetAlbumLambdaVersionIsqRTKk74NwH7nhJvPldYkCHbJBDmdPSQGcS6lvt2c"
+            }
+          },
+          "DeleteAlbumLambdaFunctionQualifiedArn": {
+            "Description": "Current Lambda function version",
+            "Value": {
+              "Ref": "DeleteAlbumLambdaVersionltp1tgFwyAv5aMUTYEgvd21GtcR2IJGgKTjmLDFKrs"
             }
           },
           "HttpApiId": {
@@ -1233,7 +1457,7 @@
         "timeout": 6,
         "runtime": "nodejs12.x",
         "vpc": {},
-        "versionLogicalId": "GenerateUploadUrlLambdaVersionvQki1PNc4jpghKndmxwkf761OLBxIWtgQUSuKblccAc"
+        "versionLogicalId": "GenerateUploadUrlLambdaVersionubppLritMHTSjj69lK8CrwOL32Bj8vJCAcvm5ABrY"
       },
       "createAlbum": {
         "handler": "src/lambda/createAlbum.handler",
@@ -1259,7 +1483,7 @@
         "timeout": 6,
         "runtime": "nodejs12.x",
         "vpc": {},
-        "versionLogicalId": "CreateAlbumLambdaVersionxoIc9UICyBrUj2cyzJhZLmeZ9P5ksL8c03qDf7BSP0"
+        "versionLogicalId": "CreateAlbumLambdaVersionvZHvqLCV5urWkDIiKrTHznvzO06GtsjZJ4ZHHQDbs"
       },
       "getAlbum": {
         "handler": "src/lambda/getAlbum.handler",
@@ -1291,7 +1515,39 @@
         "timeout": 6,
         "runtime": "nodejs12.x",
         "vpc": {},
-        "versionLogicalId": "GetAlbumLambdaVersionK2ElTYEz7c1xoi4tyeidppMR1eRhRn66JYVxeaNLw"
+        "versionLogicalId": "GetAlbumLambdaVersionIsqRTKk74NwH7nhJvPldYkCHbJBDmdPSQGcS6lvt2c"
+      },
+      "deleteAlbum": {
+        "handler": "src/lambda/deleteAlbum.handler",
+        "events": [
+          {
+            "httpApi": {
+              "path": "/album/{albumId}",
+              "method": "delete",
+              "authorizer": "jwtAuthorizer"
+            },
+            "resolvedMethod": "DELETE",
+            "resolvedPath": "/album/{albumId}"
+          }
+        ],
+        "iamRoleStatements": [
+          {
+            "$ref": "$[\"service\"][\"provider\"][\"compiledCloudFormationTemplate\"][\"Resources\"][\"DeleteAlbumIamRoleLambdaExecution\"][\"Properties\"][\"Policies\"][0][\"PolicyDocument\"][\"Statement\"][1]"
+          },
+          {
+            "$ref": "$[\"service\"][\"provider\"][\"compiledCloudFormationTemplate\"][\"Resources\"][\"DeleteAlbumIamRoleLambdaExecution\"][\"Properties\"][\"Policies\"][0][\"PolicyDocument\"][\"Statement\"][2]"
+          },
+          {
+            "$ref": "$[\"service\"][\"provider\"][\"compiledCloudFormationTemplate\"][\"Resources\"][\"DeleteAlbumIamRoleLambdaExecution\"][\"Properties\"][\"Policies\"][0][\"PolicyDocument\"][\"Statement\"][3]"
+          }
+        ],
+        "name": "photoAlbumApp-dev-deleteAlbum",
+        "package": {},
+        "memory": 1024,
+        "timeout": 6,
+        "runtime": "nodejs12.x",
+        "vpc": {},
+        "versionLogicalId": "DeleteAlbumLambdaVersionltp1tgFwyAv5aMUTYEgvd21GtcR2IJGgKTjmLDFKrs"
       }
     },
     "resources": {
@@ -1490,7 +1746,7 @@
     "artifact": "/Users/john/Desktop/udacity_aws_course/photo-album-app/backend/.serverless/photoAlbumApp.zip"
   },
   "package": {
-    "artifactDirectoryName": "serverless/photoAlbumApp/dev/1612123223223-2021-01-31T20:00:23.223Z",
+    "artifactDirectoryName": "serverless/photoAlbumApp/dev/1612127900994-2021-01-31T21:18:20.994Z",
     "artifact": "photoAlbumApp.zip"
   }
 }

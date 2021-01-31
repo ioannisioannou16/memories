@@ -83,6 +83,26 @@ functions:
         Action:
           - s3:GetObject
         Resource: arn:aws:s3:::${self:provider.environment.PHOTOS_S3_BUCKET_NAME}/*
+  deleteAlbum:
+    handler: src/lambda/deleteAlbum.handler
+    events:
+      - httpApi:
+          path: /album/{albumId}
+          method: delete
+          authorizer: jwtAuthorizer
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:DeleteItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.ALBUM_TABLE_NAME}
+      - Effect: Allow
+        Action:
+          - dynamodb:BatchWriteItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.PHOTO_TABLE_NAME}
+      - Effect: Allow
+        Action:
+          - dynamodb:Query
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.PHOTO_TABLE_NAME}
 resources:
   Resources:
     CognitoUserPool:
