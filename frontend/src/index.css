@@ -19,3 +19,7 @@
   margin: 16px 16px;
   min-height: 280px;
 }
+
+img {
+  object-fit: cover;
+}

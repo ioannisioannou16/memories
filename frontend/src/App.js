@@ -6,24 +6,27 @@ import MainHeader from "./components/MainHeader";
 import RequireAuth from "./components/RequireAuth";
 import { Provider } from 'react-redux';
 import store from "./redux/store";
-import api from "./api";
+import initialiseAPI from "./utls/initialiseAPI";
 import LoginCallback from "./pages/LoginCallback";
 import LogoutCallback from "./pages/LogoutCallback";
-import Album from "./pages/Album";
+import CreateOrEditMemory from "./pages/CreateOrEditMemory";
+import ViewMemory from './pages/ViewMemory';
+import Notification from "./components/Notification";
 
-api.initialise(store);
+initialiseAPI(store);
 
 const { Header, Content, Footer } = Layout;
 
 export default () => {
   return (
     <Provider store={store}>
-      <Layout id="mainLayout">
-        <Header id="mainHeader">
-          <MainHeader />
-        </Header>
-        <Content id="mainPageContent">
-          <Router>
+      <Router>
+        <Layout id="mainLayout">
+          <Notification />
+          <Header id="mainHeader">
+            <MainHeader />
+          </Header>
+          <Content id="mainPageContent">
             <Switch>
               <Route exact path="/about">
                 <About/>
@@ -39,16 +42,19 @@ export default () => {
                   <Route exact path="/">
                     <Main/>
                   </Route>
-                  <Route exact path="/album/:albumId">
-                    <Album/>
+                  <Route exact path="/memories/:memoryId/view">
+                    <ViewMemory/>
+                  </Route>
+                  <Route exact path="/memories/:memoryId">
+                    <CreateOrEditMemory/>
                   </Route>
                 </Switch>
               </RequireAuth>
             </Switch>
-          </Router>
-        </Content>
-        <Footer style={{ textAlign: 'center' }}>PhotoAlbum ©2021</Footer>
-      </Layout>
+          </Content>
+          <Footer style={{ textAlign: 'center' }}>Memories ©2021</Footer>
+        </Layout>
+      </Router>
     </Provider>
   );
 }

@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { PlusOutlined } from "@ant-design/icons";
 import { message, Modal, Upload } from "antd";
-import api from "../api";
 import axios from "axios";
+import { addImage, deleteImage } from "../redux/memories";
+import { useDispatch } from "react-redux";
+import { useEffect } from "react";
+import _ from 'lodash';
 
 const axiosUploadInstance = axios.create();
 
@@ -15,14 +18,23 @@ const getBase64 = (file) => {
   });
 }
 
-export default ({ value = [], onChange, albumId }) => {
+export default ({ value = [], onChange, memoryId }) => {
 
-  console.log(value)
-
+  const dispatch = useDispatch();
+  const [fileList, setFileList] = useState([])
   const [preview, setPreview] = useState({
     visible: false,
     src: null
   })
+
+  useEffect(() => {
+    setFileList(value.map(({ imageId, imageUrl }) => ({
+      uid: imageId,
+      imageId,
+      url: imageUrl,
+      status: 'done'
+    })))
+  }, [])
 
   const handlePreview = async file => {
     if (!file.url && !file.preview) {
@@ -47,10 +59,25 @@ export default ({ value = [], onChange, albumId }) => {
   }
 
   const handleChange = (info) => {
-    onChange(info.fileList.filter(file => !!file.status))
+    const files = info.fileList
+      .filter(file => !!file.status)
+      .map(file => ({
+        uid: file.uid,
+        imageId: _.get(file, 'response.imageId', file.uid),
+        url: _.get(file, 'response.imageUrl', file.url),
+        status: file.status
+      }))
+    setFileList(files)
+    onChange(files.filter(file => file.status === 'done').map(file => ({ imageId: file.imageId, imageUrl: file.url })))
   }
 
   const handleCancel = () => setPreview({ visible: false, src: null })
+
+  const onRemove = async (file) => {
+    const imageId = file.imageId
+    await axios.delete(`/memories/${memoryId}/images/${imageId}`)
+    dispatch(deleteImage({ memoryId, imageId}))
+  }
 
   const customRequest = async ({
     file,
@@ -59,9 +86,9 @@ export default ({ value = [], onChange, albumId }) => {
     onSuccess,
   }) => {
     try {
-      const uploadUrl = await api.generateUploadUrl({ albumId, fileType: file.type });
-      const response = await axiosUploadInstance
-        .put(uploadUrl, file, {
+      const { imageId, imageUrl, imageUploadUrl } = (await axios.post('/generate-upload-url', { memoryId })).data
+      await axiosUploadInstance
+        .put(imageUploadUrl, file, {
           headers: {
             'Content-Type': file.type
           },
@@ -69,7 +96,8 @@ export default ({ value = [], onChange, albumId }) => {
             onProgress({ percent: Math.round((loaded / total) * 100).toFixed(2) }, file);
           },
         })
-      onSuccess(response, file);
+      dispatch(addImage({ memoryId, image: { imageId, imageUrl }}))
+      onSuccess({ imageId, imageUrl }, file);
     } catch (err) {
       onError(err);
     }
@@ -88,11 +116,12 @@ export default ({ value = [], onChange, albumId }) => {
         customRequest={customRequest}
         multiple={true}
         listType="picture-card"
-        fileList={value}
+        fileList={fileList}
         onPreview={handlePreview}
         onChange={handleChange}
+        onRemove={onRemove}
       >
-        {uploadButton}
+        {fileList.length >= 10 ? null : uploadButton}
       </Upload>
       <Modal
         visible={preview.visible}

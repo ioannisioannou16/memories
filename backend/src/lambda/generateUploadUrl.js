@@ -1,63 +1,47 @@
 'use strict';
 
 const AWS = require("aws-sdk")
+const utils = require("../utils");
 const { v4: uuid } = require("uuid")
-const utils = require('../utils')
 
-const s3 = new AWS.S3({ signatureVersion: 'v4' })
 const docClient = new AWS.DynamoDB.DocumentClient()
-const photoTable = process.env.PHOTO_TABLE_NAME
-const albumTable = process.env.ALBUM_TABLE_NAME;
+const s3 = new AWS.S3({ signatureVersion: 'v4' })
 const bucketName = process.env.PHOTOS_S3_BUCKET_NAME
-const urlExpiration = parseInt(process.env.PUT_SIGNED_URL_EXPIRATION)
+const memoriesTable = process.env.MEMORIES_TABLE_NAME
+const getUrlExpiration = parseInt(process.env.GET_SIGNED_URL_EXPIRATION)
+const putUrlExpiration = parseInt(process.env.PUT_SIGNED_URL_EXPIRATION)
 
 module.exports.handler = async (event) => {
-  const { albumId, fileType } = JSON.parse(event.body);
+  const { memoryId } = JSON.parse(event.body);
   const userId = utils.getUserId(event);
-
-  const album = (await docClient.get({
-    TableName: albumTable,
-    Key: {
-      "albumId": albumId
-    }
-  }).promise()).Item;
-  if (!album) {
-    return {
-      statusCode: 404,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-      },
-      body: JSON.stringify({}),
-    };
-  }
-  if (album.userId !== userId) {
-    return {
-      statusCode: 403,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-      },
-      body: JSON.stringify({}),
-    };
-  }
-
   const imageId = uuid();
-  const key = `${userId}/${imageId}`;
-  const uploadUrl = await s3.getSignedUrlPromise('putObject', {
-    Bucket: bucketName,
-    Key: key,
-    Expires: urlExpiration,
-    ContentType: fileType
-  })
 
-  const photoItem = {
-    albumId,
-    createdAt: (new Date()).toISOString(),
-    imageKey: key
-  }
-  await docClient.put({
-    TableName: photoTable,
-    Item: photoItem
+  await docClient.update({
+    TableName: memoriesTable,
+    Key: {
+      "memoryId": memoryId
+    },
+    ConditionExpression: "userId = :userId AND (attribute_not_exists(images) OR size (images) < :maxImages)",
+    UpdateExpression: "ADD images :imageId",
+    ExpressionAttributeValues: {
+      ':userId': userId,
+      ":imageId": docClient.createSet([imageId]),
+      ":maxImages": 10
+    },
   }).promise()
+
+  const [imageUploadUrl, imageUrl] = await Promise.all([
+    s3.getSignedUrlPromise('putObject', {
+      Bucket: bucketName,
+      Key: imageId,
+      Expires: putUrlExpiration,
+    }),
+    s3.getSignedUrlPromise('getObject', {
+      Bucket: bucketName,
+      Key: imageId,
+      Expires: getUrlExpiration,
+    })
+  ]);
 
   return {
     statusCode: 200,
@@ -66,8 +50,9 @@ module.exports.handler = async (event) => {
       'Access-Control-Allow-Credentials': true
     },
     body: JSON.stringify({
-      uploadUrl,
-      photoItem
+      imageUploadUrl,
+      imageUrl,
+      imageId
     }),
   };
 };

@@ -1,4 +1,4 @@
-service: photoAlbumApp
+service: memories-app
 frameworkVersion: '2'
 
 plugins:
@@ -11,9 +11,9 @@ provider:
   stage: ${opt:stage, 'dev'}
   region: ${opt:region, 'eu-central-1'}
   environment:
-    ALBUM_TABLE_NAME: album-table-photo-album-app-${self:provider.stage}
-    PHOTO_TABLE_NAME: photo-table-photo-album-app-${self:provider.stage}
-    PHOTOS_S3_BUCKET_NAME: photos-bucket-photo-album-app-${self:provider.stage}
+    MEMORIES_TABLE_NAME: memories-table-memories-app-${self:provider.stage}
+    MEMORIES_BY_USER_INDEX_NAME: memories-by-user-index-memories-app-${self:provider.stage}
+    PHOTOS_S3_BUCKET_NAME: memories-photos-bucket-memories-app-${self:provider.stage}
     PUT_SIGNED_URL_EXPIRATION: 300
     GET_SIGNED_URL_EXPIRATION: 86400
   httpApi:
@@ -42,73 +42,99 @@ functions:
       - Effect: Allow
         Action:
           - s3:PutObject
+          - s3:GetObject
         Resource: arn:aws:s3:::${self:provider.environment.PHOTOS_S3_BUCKET_NAME}/*
       - Effect: Allow
         Action:
-          - dynamodb:PutItem
-        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.PHOTO_TABLE_NAME}
-      - Effect: Allow
-        Action:
-          - dynamodb:GetItem
-        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.ALBUM_TABLE_NAME}
-  createAlbum:
-    handler: src/lambda/createAlbum.handler
+          - dynamodb:UpdateItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.MEMORIES_TABLE_NAME}
+  createMemory:
+    handler: src/lambda/createMemory.handler
     events:
       - httpApi:
-          path: /album
+          path: /memories
           method: post
           authorizer: jwtAuthorizer
     iamRoleStatements:
       - Effect: Allow
         Action:
           - dynamodb:PutItem
-        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.ALBUM_TABLE_NAME}
-  getAlbum:
-    handler: src/lambda/getAlbum.handler
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.MEMORIES_TABLE_NAME}
+  getMemories:
+    handler: src/lambda/getMemories.handler
     events:
       - httpApi:
-          path: /album/{albumId}
+          path: /memories
           method: get
           authorizer: jwtAuthorizer
     iamRoleStatements:
       - Effect: Allow
         Action:
           - dynamodb:Query
-        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.PHOTO_TABLE_NAME}
-      - Effect: Allow
-        Action:
-          - dynamodb:GetItem
-        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.ALBUM_TABLE_NAME}
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.MEMORIES_TABLE_NAME}/index/${self:provider.environment.MEMORIES_BY_USER_INDEX_NAME}
       - Effect: Allow
         Action:
           - s3:GetObject
         Resource: arn:aws:s3:::${self:provider.environment.PHOTOS_S3_BUCKET_NAME}/*
-  deleteAlbum:
-    handler: src/lambda/deleteAlbum.handler
+  getMemory:
+    handler: src/lambda/getMemory.handler
     events:
       - httpApi:
-          path: /album/{albumId}
+          path: /memories/{memoryId}
+          method: get
+          authorizer: jwtAuthorizer
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:GetItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.MEMORIES_TABLE_NAME}
+      - Effect: Allow
+        Action:
+          - s3:GetObject
+        Resource: arn:aws:s3:::${self:provider.environment.PHOTOS_S3_BUCKET_NAME}/*
+  updateMemory:
+    handler: src/lambda/updateMemory.handler
+    events:
+      - httpApi:
+          path: /memories/{memoryId}
+          method: put
+          authorizer: jwtAuthorizer
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:UpdateItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.MEMORIES_TABLE_NAME}
+  deleteMemory:
+    handler: src/lambda/deleteMemory.handler
+    events:
+      - httpApi:
+          path: /memories/{memoryId}
           method: delete
           authorizer: jwtAuthorizer
     iamRoleStatements:
       - Effect: Allow
         Action:
           - dynamodb:DeleteItem
-        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.ALBUM_TABLE_NAME}
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.MEMORIES_TABLE_NAME}
+  deleteMemoryImage:
+    handler: src/lambda/deleteMemoryImage.handler
+    events:
+      - httpApi:
+          path: /memories/{memoryId}/images/{imageId}
+          method: delete
+          authorizer: jwtAuthorizer
+    iamRoleStatements:
       - Effect: Allow
         Action:
-          - dynamodb:BatchWriteItem
-        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.PHOTO_TABLE_NAME}
-      - Effect: Allow
-        Action:
-          - dynamodb:Query
-        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.PHOTO_TABLE_NAME}
+          - dynamodb:UpdateItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.MEMORIES_TABLE_NAME}
+
 resources:
   Resources:
     CognitoUserPool:
       Type: "AWS::Cognito::UserPool"
       Properties:
-        UserPoolName: photoAlbumApp-user-pool-${self:provider.stage}
+        UserPoolName: memories-app-user-pool-${self:provider.stage}
         UsernameAttributes:
           - email
         AutoVerifiedAttributes:
@@ -125,7 +151,7 @@ resources:
     CognitoUserPoolClient:
       Type: "AWS::Cognito::UserPoolClient"
       Properties:
-        ClientName: photoAlbumApp-user-pool-client-${self:provider.stage}
+        ClientName: memories-app-user-pool-client-${self:provider.stage}
         SupportedIdentityProviders: ["COGNITO"]
         AllowedOAuthFlowsUserPoolClient: true
         AllowedOAuthFlows: ["implicit"]
@@ -140,7 +166,7 @@ resources:
     CognitoUserPoolDomain:
       Type: AWS::Cognito::UserPoolDomain
       Properties:
-        Domain: photo-album-app-${self:provider.stage}
+        Domain: memories-app-${self:provider.stage}
         UserPoolId:
           Ref: CognitoUserPool
     PhotosBucket:
@@ -160,23 +186,23 @@ resources:
                 - DELETE
                 - HEAD
               MaxAge: 3000
-    AlbumTable:
+    MemoriesTable:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: ${self:provider.environment.ALBUM_TABLE_NAME}
+        TableName: ${self:provider.environment.MEMORIES_TABLE_NAME}
         AttributeDefinitions:
-          - AttributeName: albumId
-            AttributeType: S
-          - AttributeName: userId
+          - AttributeName: memoryId
             AttributeType: S
           - AttributeName: createdAt
             AttributeType: S
+          - AttributeName: userId
+            AttributeType: S
         KeySchema:
-          - AttributeName: albumId
+          - AttributeName: memoryId
             KeyType: HASH
         BillingMode: PAY_PER_REQUEST
         GlobalSecondaryIndexes:
-          - IndexName: album-table-user-index-photo-album-app-${self:provider.stage}
+          - IndexName: ${self:provider.environment.MEMORIES_BY_USER_INDEX_NAME}
             KeySchema:
               - AttributeName: userId
                 KeyType: HASH
@@ -184,18 +210,3 @@ resources:
                 KeyType: RANGE
             Projection:
               ProjectionType: ALL
-    PhotoTable:
-      Type: AWS::DynamoDB::Table
-      Properties:
-        TableName: ${self:provider.environment.PHOTO_TABLE_NAME}
-        AttributeDefinitions:
-          - AttributeName: albumId
-            AttributeType: S
-          - AttributeName: createdAt
-            AttributeType: S
-        KeySchema:
-          - AttributeName: albumId
-            KeyType: HASH
-          - AttributeName: createdAt
-            KeyType: RANGE
-        BillingMode: PAY_PER_REQUEST
