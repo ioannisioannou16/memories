@@ -1,7 +1,12 @@
-'use strict';
+'use strict'
 
+const middy = require('@middy/core')
+const cors = require('@middy/http-cors')
+const httpErrorHandler = require('@middy/http-error-handler')
+const validator = require("@middy/validator")
+const createError = require('http-errors')
 const AWS = require("aws-sdk")
-const utils = require("../utils");
+const utils = require("../utils")
 const { v4: uuid } = require("uuid")
 
 const docClient = new AWS.DynamoDB.DocumentClient()
@@ -11,48 +16,78 @@ const memoriesTable = process.env.MEMORIES_TABLE_NAME
 const getUrlExpiration = parseInt(process.env.GET_SIGNED_URL_EXPIRATION)
 const putUrlExpiration = parseInt(process.env.PUT_SIGNED_URL_EXPIRATION)
 
-module.exports.handler = async (event) => {
-  const { memoryId } = JSON.parse(event.body);
-  const userId = utils.getUserId(event);
-  const imageId = uuid();
-
-  await docClient.update({
-    TableName: memoriesTable,
-    Key: {
-      "memoryId": memoryId
+const generateUploadUrlSchema = {
+  type: "object",
+  properties: {
+    pathParameters: {
+      type: "object",
+      properties: {
+        memoryId: {
+          type: "string",
+          format: "uuid"
+        },
+      },
+      required: ["memoryId"],
     },
-    ConditionExpression: "userId = :userId AND (attribute_not_exists(images) OR size (images) < :maxImages)",
-    UpdateExpression: "ADD images :imageId",
-    ExpressionAttributeValues: {
-      ':userId': userId,
-      ":imageId": docClient.createSet([imageId]),
-      ":maxImages": 10
-    },
-  }).promise()
+  },
+  required: ['pathParameters']
+}
 
+const handler = middy(async (event) => {
+  const memoryId = event.pathParameters.memoryId
+  const userId = utils.getUserId(event)
+  const imageId = uuid()
+
+  try {
+    await docClient.update({
+      TableName: memoriesTable,
+      Key: {
+        "memoryId": memoryId
+      },
+      ConditionExpression: "attribute_exists(memoryId) AND userId = :userId AND (attribute_not_exists(images) OR size (images) < :maxImages)",
+      UpdateExpression: "ADD images :imageId",
+      ExpressionAttributeValues: {
+        ':userId': userId,
+        ":imageId": docClient.createSet([imageId]),
+        ":maxImages": 10
+      },
+    }).promise()
+  } catch (err) {
+    if (err.code === 'ConditionalCheckFailedException') {
+      throw new createError.BadRequest("Unable to upload image")
+    }
+    throw err
+  }
+
+  const imageKey = `${userId}/${imageId}`
   const [imageUploadUrl, imageUrl] = await Promise.all([
     s3.getSignedUrlPromise('putObject', {
       Bucket: bucketName,
-      Key: imageId,
+      Key: imageKey,
       Expires: putUrlExpiration,
     }),
     s3.getSignedUrlPromise('getObject', {
       Bucket: bucketName,
-      Key: imageId,
+      Key: imageKey,
       Expires: getUrlExpiration,
     })
-  ]);
+  ])
 
   return {
     statusCode: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Credentials': true
-    },
     body: JSON.stringify({
       imageUploadUrl,
       imageUrl,
       imageId
-    }),
-  };
-};
+    })
+  }
+})
+
+handler
+  .use(cors())
+  .use(validator({ inputSchema: generateUploadUrlSchema }))
+  .use(httpErrorHandler())
+
+module.exports = {
+  handler
+}

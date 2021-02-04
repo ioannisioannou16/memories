@@ -1,5 +1,10 @@
-'use strict';
+'use strict'
 
+const middy = require('@middy/core')
+const cors = require('@middy/http-cors')
+const httpErrorHandler = require('@middy/http-error-handler')
+const validator = require("@middy/validator")
+const createError = require('http-errors')
 const AWS = require("aws-sdk")
 const utils = require('../utils')
 
@@ -9,9 +14,26 @@ const memoriesTable = process.env.MEMORIES_TABLE_NAME
 const bucketName = process.env.PHOTOS_S3_BUCKET_NAME
 const urlExpiration = parseInt(process.env.GET_SIGNED_URL_EXPIRATION)
 
-module.exports.handler = async (event) => {
-  const memoryId = event.pathParameters.memoryId;
-  const userId = utils.getUserId(event);
+const getMemorySchema = {
+  type: "object",
+  properties: {
+    pathParameters: {
+      type: "object",
+      properties: {
+        memoryId: {
+          type: "string",
+          format: "uuid"
+        },
+      },
+      required: ["memoryId"],
+    },
+  },
+  required: ['pathParameters']
+}
+
+const handler = middy(async (event) => {
+  const memoryId = event.pathParameters.memoryId
+  const userId = utils.getUserId(event)
 
   const memory = (await docClient.get({
     TableName: memoriesTable,
@@ -22,13 +44,17 @@ module.exports.handler = async (event) => {
     ExpressionAttributeValues: {
       ':userId': userId
     },
-  }).promise()).Item;
+  }).promise()).Item
+
+  if (!memory) {
+    throw new createError.NotFound("Memory does not exist")
+  }
 
   const images = await Promise.all((memory.images ? memory.images.values : []).map(async (imageId) => ({
     imageId,
     imageUrl: await s3.getSignedUrlPromise('getObject', {
       Bucket: bucketName,
-      Key: imageId,
+      Key: `${userId}/${imageId}`,
       Expires: urlExpiration
     })
   })))
@@ -39,9 +65,15 @@ module.exports.handler = async (event) => {
 
   return {
     statusCode: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-    },
     body: JSON.stringify(memoryWithImageUrls),
-  };
-};
+  }
+})
+
+handler
+  .use(cors())
+  .use(validator({ inputSchema: getMemorySchema }))
+  .use(httpErrorHandler())
+
+module.exports = {
+  handler
+}

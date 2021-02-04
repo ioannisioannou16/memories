@@ -112,6 +112,5 @@ export default () => {
         }
       </Col>
     </Row>
-
   </div>
 }

@@ -4,6 +4,9 @@ frameworkVersion: '2'
 plugins:
   - serverless-iam-roles-per-function
 
+package:
+  individually: true
+
 provider:
   name: aws
   runtime: nodejs12.x
@@ -35,7 +38,7 @@ functions:
     handler: src/lambda/generateUploadUrl.handler
     events:
       - httpApi:
-          path: /generate-upload-url
+          path: /memories/{memoryId}/generate-upload-url
           method: post
           authorizer: jwtAuthorizer
     iamRoleStatements:
@@ -128,7 +131,6 @@ functions:
         Action:
           - dynamodb:UpdateItem
         Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.MEMORIES_TABLE_NAME}
-
 resources:
   Resources:
     CognitoUserPool:

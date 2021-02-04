@@ -1,10 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PlusOutlined } from "@ant-design/icons";
 import { message, Modal, Upload } from "antd";
 import axios from "axios";
 import { addImage, deleteImage } from "../redux/memories";
 import { useDispatch } from "react-redux";
-import { useEffect } from "react";
 import _ from 'lodash';
 
 const axiosUploadInstance = axios.create();
@@ -86,7 +85,7 @@ export default ({ value = [], onChange, memoryId }) => {
     onSuccess,
   }) => {
     try {
-      const { imageId, imageUrl, imageUploadUrl } = (await axios.post('/generate-upload-url', { memoryId })).data
+      const { imageId, imageUrl, imageUploadUrl } = (await axios.post(`/memories/${memoryId}/generate-upload-url`)).data
       await axiosUploadInstance
         .put(imageUploadUrl, file, {
           headers: {

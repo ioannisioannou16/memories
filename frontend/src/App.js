@@ -6,7 +6,7 @@ import MainHeader from "./components/MainHeader";
 import RequireAuth from "./components/RequireAuth";
 import { Provider } from 'react-redux';
 import store from "./redux/store";
-import initialiseAPI from "./utls/initialiseAPI";
+import initialiseAPI from "./utils/initialiseAPI";
 import LoginCallback from "./pages/LoginCallback";
 import LogoutCallback from "./pages/LogoutCallback";
 import CreateOrEditMemory from "./pages/CreateOrEditMemory";

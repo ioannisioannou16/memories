@@ -50,7 +50,7 @@ export default () => {
     if (!memory) {
       dispatch(fetchMemory(memoryId))
     }
-  }, [memory])
+  }, [])
 
   if (!memory) {
     return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh'}}><Spin size="large" /></div>
