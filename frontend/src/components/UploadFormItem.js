@@ -46,8 +46,8 @@ export default ({ value = [], onChange, memoryId }) => {
   };
 
   const beforeUpload = file => {
-    if ((file.type !== 'image/png') && (file.type !== "image/jpeg")) {
-      message.error('You can only upload png or jpeg photos');
+    if (!_.startsWith(file.type, 'image/')) {
+      message.error('You can only upload images');
       return false;
     }
     if (!(file.size / 1024 / 1024 < 10)) {
@@ -62,7 +62,7 @@ export default ({ value = [], onChange, memoryId }) => {
       .filter(file => !!file.status)
       .map(file => ({
         uid: file.uid,
-        imageId: _.get(file, 'response.imageId', file.uid),
+        imageId: _.get(file, 'response.imageId', file.imageId),
         url: _.get(file, 'response.imageUrl', file.url),
         status: file.status
       }))
@@ -74,8 +74,10 @@ export default ({ value = [], onChange, memoryId }) => {
 
   const onRemove = async (file) => {
     const imageId = file.imageId
-    await axios.delete(`/memories/${memoryId}/images/${imageId}`)
-    dispatch(deleteImage({ memoryId, imageId}))
+    if (imageId) {
+      await axios.delete(`/memories/${memoryId}/images/${imageId}`)
+      dispatch(deleteImage({ memoryId, imageId }))
+    }
   }
 
   const customRequest = async ({
@@ -85,12 +87,13 @@ export default ({ value = [], onChange, memoryId }) => {
     onSuccess,
   }) => {
     try {
-      const { imageId, imageUrl, imageUploadUrl } = (await axios.post(`/memories/${memoryId}/generate-upload-url`)).data
+      const { imageId, imageUrl, imageUploadData } = (await axios.post(`/memories/${memoryId}/generate-upload-url`)).data
+      const formData = new FormData();
+      formData.append("Content-Type", file.type);
+      Object.entries(imageUploadData.fields).forEach(([k, v]) => formData.append(k, v));
+      formData.append("file", file)
       await axiosUploadInstance
-        .put(imageUploadUrl, file, {
-          headers: {
-            'Content-Type': file.type
-          },
+        .post(imageUploadData.url, formData, {
           onUploadProgress: ({ total, loaded }) => {
             onProgress({ percent: Math.round((loaded / total) * 100).toFixed(2) }, file);
           },

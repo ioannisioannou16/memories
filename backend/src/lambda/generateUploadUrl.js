@@ -60,11 +60,17 @@ const handler = middy(async (event) => {
   }
 
   const imageKey = `${userId}/${imageId}`
-  const [imageUploadUrl, imageUrl] = await Promise.all([
-    s3.getSignedUrlPromise('putObject', {
+  const [imageUploadData, imageUrl] = await Promise.all([
+    s3.createPresignedPost({
       Bucket: bucketName,
-      Key: imageKey,
+      Fields: {
+        key: imageKey,
+      },
       Expires: putUrlExpiration,
+      Conditions: [
+        ["starts-with", "$Content-Type", "image/"],
+        ["content-length-range", 0, 10485760],
+      ]
     }),
     s3.getSignedUrlPromise('getObject', {
       Bucket: bucketName,
@@ -76,7 +82,7 @@ const handler = middy(async (event) => {
   return {
     statusCode: 200,
     body: JSON.stringify({
-      imageUploadUrl,
+      imageUploadData,
       imageUrl,
       imageId
     })
