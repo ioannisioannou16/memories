@@ -17,7 +17,7 @@ provider:
     MEMORIES_TABLE_NAME: memories-table-memories-app-${self:provider.stage}
     MEMORIES_BY_USER_INDEX_NAME: memories-by-user-index-memories-app-${self:provider.stage}
     PHOTOS_S3_BUCKET_NAME: memories-photos-bucket-memories-app-${self:provider.stage}
-    PUT_SIGNED_URL_EXPIRATION: 300
+    POST_SIGNED_URL_EXPIRATION: 300
     GET_SIGNED_URL_EXPIRATION: 86400
   httpApi:
     cors: true

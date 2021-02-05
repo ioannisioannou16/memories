@@ -14,7 +14,7 @@ const s3 = new AWS.S3({ signatureVersion: 'v4' })
 const bucketName = process.env.PHOTOS_S3_BUCKET_NAME
 const memoriesTable = process.env.MEMORIES_TABLE_NAME
 const getUrlExpiration = parseInt(process.env.GET_SIGNED_URL_EXPIRATION)
-const putUrlExpiration = parseInt(process.env.PUT_SIGNED_URL_EXPIRATION)
+const postUrlExpiration = parseInt(process.env.POST_SIGNED_URL_EXPIRATION)
 
 const generateUploadUrlSchema = {
   type: "object",
@@ -66,7 +66,7 @@ const handler = middy(async (event) => {
       Fields: {
         key: imageKey,
       },
-      Expires: putUrlExpiration,
+      Expires: postUrlExpiration,
       Conditions: [
         ["starts-with", "$Content-Type", "image/"],
         ["content-length-range", 0, 10485760],
