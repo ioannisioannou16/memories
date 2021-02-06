@@ -1,12 +1,11 @@
-import { Button, Card, Carousel, Col, Image, List, Row, Spin, Typography, message, Popconfirm, Empty } from "antd";
+import { Badge, Button, Card, Col, Empty, Image, List, message, Popconfirm, Row, Spin, Typography } from "antd";
 import { useHistory } from "react-router";
 import { shallowEqual, useDispatch, useSelector } from "react-redux";
 import { useEffect } from "react";
 import { createMemory, deleteMemory, fetchMemories } from "../redux/memories";
-import { EditOutlined, EyeOutlined, DeleteOutlined } from '@ant-design/icons';
+import { DeleteOutlined, EditOutlined, EyeOutlined } from '@ant-design/icons';
 import { unwrapResult } from "@reduxjs/toolkit";
 import _ from 'lodash';
-import { sendNotification } from "../redux/system";
 
 const { Title } = Typography;
 const { Meta } = Card;
@@ -50,18 +49,21 @@ export default () => {
     return <div key={memoryId} style={{ marginBottom: 24 }}>
       <Card
         cover={
-          <Carousel autoplay>
-            {images.map(image => (
+          !images.length ? null : (
+            <div style={{ position: 'relative'}}>
+              <div style={{ position: 'absolute', top: '10px', right: '10px', zIndex: 1 }}>
+                <div className="badge">{images.length}</div>
+              </div>
               <Image
                 height="250px"
                 width="100%"
-                key={image.imageId}
-                src={image.imageUrl}
+                key={images[0].imageId}
+                src={images[0].imageUrl}
                 preview={false}
                 placeholder={<Spin style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }} />}
               />
-            ))}
-          </Carousel>
+            </div>
+          )
         }
         actions={[
           <EyeOutlined onClick={() => history.push(`/memories/${memoryId}/view`)} key="view" />,

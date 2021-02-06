@@ -23,3 +23,14 @@
 img {
   object-fit: cover;
 }
+
+.badge {
+  display: inline-block;
+  min-width: 2.3em;
+  padding: .3em;
+  border-radius: 50%;
+  font-size: 12px;
+  text-align: center;
+  background: #8c8c8c;
+  color: #fefefe;
+}
