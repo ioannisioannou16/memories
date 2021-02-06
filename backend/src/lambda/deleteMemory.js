@@ -4,28 +4,16 @@ const middy = require('@middy/core')
 const cors = require('@middy/http-cors')
 const httpErrorHandler = require('@middy/http-error-handler')
 const validator = require("@middy/validator")
-const AWS = require("aws-sdk")
 const utils = require('../utils')
+const memoriesDao = require('../dao/memories')
 const inputSchema = require("../schema/deleteMemory.json")
-
-const docClient = new AWS.DynamoDB.DocumentClient()
-const memoriesTable = process.env.MEMORIES_TABLE_NAME
 
 const handler = middy(async (event) => {
   const memoryId = event.pathParameters.memoryId
   const userId = utils.getUserId(event)
 
   try {
-    await docClient.delete({
-      TableName: memoriesTable,
-      Key: {
-        "memoryId": memoryId
-      },
-      ConditionExpression: "userId = :userId",
-      ExpressionAttributeValues: {
-        ':userId': userId
-      },
-    }).promise()
+    await memoriesDao.deleteMemory(userId, memoryId)
   } catch (err) {
     if (err.code !== 'ConditionalCheckFailedException') {
       throw err

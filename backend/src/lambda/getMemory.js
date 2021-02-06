@@ -7,11 +7,10 @@ const validator = require("@middy/validator")
 const createError = require('http-errors')
 const AWS = require("aws-sdk")
 const utils = require('../utils')
+const memoriesDao = require('../dao/memories')
 const inputSchema = require("../schema/getMemory.json")
 
-const docClient = new AWS.DynamoDB.DocumentClient()
 const s3 = new AWS.S3({ signatureVersion: 'v4' })
-const memoriesTable = process.env.MEMORIES_TABLE_NAME
 const bucketName = process.env.PHOTOS_S3_BUCKET_NAME
 const urlExpiration = parseInt(process.env.GET_SIGNED_URL_EXPIRATION)
 
@@ -19,16 +18,7 @@ const handler = middy(async (event) => {
   const memoryId = event.pathParameters.memoryId
   const userId = utils.getUserId(event)
 
-  const memory = (await docClient.get({
-    TableName: memoriesTable,
-    Key: {
-      "memoryId": memoryId
-    },
-    ConditionExpression: "userId = :userId",
-    ExpressionAttributeValues: {
-      ':userId': userId
-    },
-  }).promise()).Item
+  const memory = await memoriesDao.getMemory(userId, memoryId)
 
   if (!memory) {
     throw new createError.NotFound("Memory does not exist")

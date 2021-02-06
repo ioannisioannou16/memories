@@ -14,7 +14,7 @@
         }
       },
       "required": ["memoryId", "imageId"]
-    },
+    }
   },
   "required": ["pathParameters"]
 }

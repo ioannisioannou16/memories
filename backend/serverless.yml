@@ -154,6 +154,9 @@ functions:
         Action:
           - dynamodb:UpdateItem
         Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.MEMORIES_TABLE_NAME}
+custom:
+  serverless-iam-roles-per-function:
+    defaultInherit: true
 resources:
   Resources:
     ApiGatewayAuthorizer:
