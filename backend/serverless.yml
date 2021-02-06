@@ -171,6 +171,16 @@ resources:
         Type: COGNITO_USER_POOLS
         ProviderARNs:
           - Fn::GetAtt: [CognitoUserPool, Arn]
+    GatewayResponse:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+        ResponseType: UNAUTHORIZED
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        StatusCode: '401'
     CognitoUserPool:
       Type: "AWS::Cognito::UserPool"
       Properties:
@@ -201,6 +211,7 @@ resources:
         AllowedOAuthScopes: ["phone", "email", "openid", "profile", "aws.cognito.signin.user.admin"]
         GenerateSecret: false
         AccessTokenValidity: 24
+        IdTokenValidity: 24
         UserPoolId:
           Ref: CognitoUserPool
     CognitoUserPoolDomain:

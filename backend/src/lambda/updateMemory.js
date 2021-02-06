@@ -21,10 +21,10 @@ const handler = middy(async (event) => {
 })
 
 handler
-  .use(cors())
   .use(httpJsonBodyParser())
   .use(validator({ inputSchema }))
   .use(httpErrorHandler())
+  .use(cors())
 
 module.exports = {
   handler

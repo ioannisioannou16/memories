@@ -19,9 +19,9 @@ const handler = middy(async (event) => {
 })
 
 handler
-  .use(cors())
   .use(validator({ inputSchema }))
   .use(httpErrorHandler())
+  .use(cors())
 
 module.exports = {
   handler

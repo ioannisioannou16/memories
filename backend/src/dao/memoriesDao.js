@@ -37,8 +37,16 @@ const addMemoryImage = async (userId, memoryId, imageId) => {
   }
 }
 
+const toJSMemory = (memory) => {
+  if (!memory) return memory;
+  return {
+    ...memory,
+    images: memory.images ? memory.images.values : []
+  }
+}
+
 const getMemories = async (userId) => {
-  return (await docClient.query({
+  const memories = (await docClient.query({
     TableName: memoriesTable,
     IndexName: memoriesByUserIndex,
     KeyConditionExpression: 'userId = :userId',
@@ -47,19 +55,16 @@ const getMemories = async (userId) => {
     },
     ScanIndexForward: false,
   }).promise()).Items
+  return memories.map(toJSMemory)
 }
 
-const getMemory = async (userId, memoryId) => {
-  return (await docClient.get({
+const getMemory = async (memoryId) => {
+  return toJSMemory((await docClient.get({
     TableName: memoriesTable,
     Key: {
       "memoryId": memoryId
     },
-    ConditionExpression: "userId = :userId",
-    ExpressionAttributeValues: {
-      ':userId': userId
-    },
-  }).promise()).Item
+  }).promise()).Item)
 }
 
 const updateMemory = async (userId, memory) => {

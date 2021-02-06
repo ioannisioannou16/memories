@@ -16,8 +16,8 @@ const handler = middy(async (event) => {
 })
 
 handler
-  .use(cors())
   .use(httpErrorHandler())
+  .use(cors())
 
 module.exports = {
   handler

@@ -49,30 +49,8 @@ const createImageAndGeneratePresignedUrls = async (userId, memoryId) => {
   }
 }
 
-const getMemories = async (userId) => {
-  const memories = await memoriesDao.getMemories(userId)
-  return Promise.all(memories.map(async (memory) => {
-    const images = await Promise.all((memory.images ? memory.images.values : []).map(async (imageId) => ({
-      imageId,
-      imageUrl: await s3.getSignedUrlPromise('getObject', {
-        Bucket: bucketName,
-        Key: `${userId}/${imageId}`,
-        Expires: getUrlExpiration
-      })
-    })))
-    return {
-      ...memory,
-      images
-    }
-  }))
-}
-
-const getMemory = async (userId, memoryId) => {
-  const memory = await memoriesDao.getMemory(userId, memoryId)
-  if (!memory) {
-    throw new createError.NotFound("Memory does not exist")
-  }
-  const images = await Promise.all((memory.images ? memory.images.values : []).map(async (imageId) => ({
+const addMemoryImageSignedUrls = async (userId, memory) => {
+  const images = await Promise.all(memory.images.map(async (imageId) => ({
     imageId,
     imageUrl: await s3.getSignedUrlPromise('getObject', {
       Bucket: bucketName,
@@ -84,6 +62,19 @@ const getMemory = async (userId, memoryId) => {
     ...memory,
     images
   }
+}
+
+const getMemories = async (userId) => {
+  const memories = await memoriesDao.getMemories(userId)
+  return Promise.all(memories.map(memory => addMemoryImageSignedUrls(userId, memory)))
+}
+
+const getMemory = async (userId, memoryId) => {
+  const memory = await memoriesDao.getMemory(memoryId)
+  if (!memory || memory.userId !== userId) {
+    throw new createError.NotFound("Memory does not exist")
+  }
+  return addMemoryImageSignedUrls(userId, memory)
 }
 
 const updateMemory = async (userId, memory) => {
