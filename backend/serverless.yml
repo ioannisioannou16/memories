@@ -13,34 +13,33 @@ provider:
   lambdaHashingVersion: 20201221
   stage: ${opt:stage, 'dev'}
   region: ${opt:region, 'eu-central-1'}
+  tracing:
+    apiGateway: true
+    lambda: true
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - xray:PutTraceSegments
+        - xray:PutTelemetryRecords
+      Resource: "*"
   environment:
     MEMORIES_TABLE_NAME: memories-table-memories-app-${self:provider.stage}
     MEMORIES_BY_USER_INDEX_NAME: memories-by-user-index-memories-app-${self:provider.stage}
     PHOTOS_S3_BUCKET_NAME: memories-photos-bucket-memories-app-${self:provider.stage}
     POST_SIGNED_URL_EXPIRATION: 300
     GET_SIGNED_URL_EXPIRATION: 86400
-  httpApi:
-    cors: true
-    authorizers:
-      jwtAuthorizer:
-        identitySource: $request.header.Authorization
-        issuerUrl:
-          Fn::Join:
-            - ''
-            - - 'https://cognito-idp.'
-              - '${opt:region, self:provider.region}'
-              - '.amazonaws.com/'
-              - Ref: CognitoUserPool
-        audience:
-          - Ref: CognitoUserPoolClient
 functions:
   generateUploadUrl:
     handler: src/lambda/generateUploadUrl.handler
     events:
-      - httpApi:
+      - http:
           path: /memories/{memoryId}/generate-upload-url
           method: post
-          authorizer: jwtAuthorizer
+          cors: true
+          authorizer:
+            type: COGNITO_USER_POOLS
+            authorizerId:
+              Ref: ApiGatewayAuthorizer
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -54,10 +53,14 @@ functions:
   createMemory:
     handler: src/lambda/createMemory.handler
     events:
-      - httpApi:
+      - http:
           path: /memories
           method: post
-          authorizer: jwtAuthorizer
+          cors: true
+          authorizer:
+            type: COGNITO_USER_POOLS
+            authorizerId:
+              Ref: ApiGatewayAuthorizer
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -66,10 +69,14 @@ functions:
   getMemories:
     handler: src/lambda/getMemories.handler
     events:
-      - httpApi:
+      - http:
           path: /memories
           method: get
-          authorizer: jwtAuthorizer
+          cors: true
+          authorizer:
+            type: COGNITO_USER_POOLS
+            authorizerId:
+              Ref: ApiGatewayAuthorizer
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -82,10 +89,14 @@ functions:
   getMemory:
     handler: src/lambda/getMemory.handler
     events:
-      - httpApi:
+      - http:
           path: /memories/{memoryId}
           method: get
-          authorizer: jwtAuthorizer
+          cors: true
+          authorizer:
+            type: COGNITO_USER_POOLS
+            authorizerId:
+              Ref: ApiGatewayAuthorizer
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -98,10 +109,14 @@ functions:
   updateMemory:
     handler: src/lambda/updateMemory.handler
     events:
-      - httpApi:
+      - http:
           path: /memories/{memoryId}
           method: put
-          authorizer: jwtAuthorizer
+          cors: true
+          authorizer:
+            type: COGNITO_USER_POOLS
+            authorizerId:
+              Ref: ApiGatewayAuthorizer
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -110,10 +125,14 @@ functions:
   deleteMemory:
     handler: src/lambda/deleteMemory.handler
     events:
-      - httpApi:
+      - http:
           path: /memories/{memoryId}
           method: delete
-          authorizer: jwtAuthorizer
+          cors: true
+          authorizer:
+            type: COGNITO_USER_POOLS
+            authorizerId:
+              Ref: ApiGatewayAuthorizer
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -122,10 +141,14 @@ functions:
   deleteMemoryImage:
     handler: src/lambda/deleteMemoryImage.handler
     events:
-      - httpApi:
+      - http:
           path: /memories/{memoryId}/images/{imageId}
           method: delete
-          authorizer: jwtAuthorizer
+          cors: true
+          authorizer:
+            type: COGNITO_USER_POOLS
+            authorizerId:
+              Ref: ApiGatewayAuthorizer
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -133,6 +156,18 @@ functions:
         Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.MEMORIES_TABLE_NAME}
 resources:
   Resources:
+    ApiGatewayAuthorizer:
+      DependsOn:
+        - ApiGatewayRestApi
+      Type: AWS::ApiGateway::Authorizer
+      Properties:
+        Name: memories-app-api-gateway-authorizer-${self:provider.stage}
+        IdentitySource: method.request.header.Authorization
+        RestApiId:
+          Ref: ApiGatewayRestApi
+        Type: COGNITO_USER_POOLS
+        ProviderARNs:
+          - Fn::GetAtt: [CognitoUserPool, Arn]
     CognitoUserPool:
       Type: "AWS::Cognito::UserPool"
       Properties:

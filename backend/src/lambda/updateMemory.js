@@ -8,37 +8,10 @@ const validator = require("@middy/validator")
 const createError = require('http-errors')
 const AWS = require("aws-sdk")
 const utils = require('../utils')
+const inputSchema = require("../schema/updateMemory.json")
 
 const docClient = new AWS.DynamoDB.DocumentClient()
 const memoriesTable = process.env.MEMORIES_TABLE_NAME
-
-const updateMemorySchema = {
-  type: "object",
-  properties: {
-    pathParameters: {
-      type: "object",
-      properties: {
-        memoryId: {
-          type: "string",
-          format: "uuid"
-        },
-      },
-      required: ["memoryId"],
-    },
-    body: {
-      type: "object",
-      properties: {
-        title: {
-          type: "string",
-        },
-        description: {
-          type: "string",
-        },
-      },
-    },
-  },
-  required: ['pathParameters', 'body']
-}
 
 const handler = middy(async (event) => {
   const memoryId = event.pathParameters.memoryId
@@ -79,7 +52,7 @@ const handler = middy(async (event) => {
 handler
   .use(cors())
   .use(httpJsonBodyParser())
-  .use(validator({ inputSchema: updateMemorySchema }))
+  .use(validator({ inputSchema }))
   .use(httpErrorHandler())
 
 module.exports = {

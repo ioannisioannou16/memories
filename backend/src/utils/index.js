@@ -9,7 +9,7 @@ const getUserId = (event) => {
 }
 
 const extractTokenFromEvent = (event) => {
-  const authHeader = event.headers.authorization
+  const authHeader = event.headers.Authorization
   return authHeader.split(" ")[1]
 }
 

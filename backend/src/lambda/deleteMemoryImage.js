@@ -6,30 +6,10 @@ const httpErrorHandler = require('@middy/http-error-handler')
 const validator = require("@middy/validator")
 const AWS = require("aws-sdk")
 const utils = require("../utils")
+const inputSchema = require("../schema/deleteMemoryImage.json")
 
 const docClient = new AWS.DynamoDB.DocumentClient()
 const memoriesTable = process.env.MEMORIES_TABLE_NAME
-
-const deleteMemoryImageSchema = {
-  type: "object",
-  properties: {
-    pathParameters: {
-      type: "object",
-      properties: {
-        memoryId: {
-          type: "string",
-          format: "uuid"
-        },
-        imageId: {
-          type: "string",
-          format: "uuid"
-        },
-      },
-      required: ["memoryId", "imageId"],
-    },
-  },
-  required: ['pathParameters']
-}
 
 const handler = middy(async (event) => {
   const { memoryId, imageId } = event.pathParameters
@@ -65,7 +45,7 @@ const handler = middy(async (event) => {
 
 handler
   .use(cors())
-  .use(validator({ inputSchema: deleteMemoryImageSchema }))
+  .use(validator({ inputSchema }))
   .use(httpErrorHandler())
 
 module.exports = {

@@ -9,10 +9,10 @@ export default () => {
   const dispatch = useDispatch();
   const history = useHistory();
   useEffect(() => {
-    const params = new URLSearchParams(location.hash);
-    dispatch(login(params.get("access_token")));
+    const params = new URLSearchParams(location.hash.split("#")[1]);
+    dispatch(login(params.get("id_token")));
     history.push('/');
-  }, [])
+  }, [location])
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh'}}><Spin /></div>
   );

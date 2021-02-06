@@ -1,0 +1,20 @@
+{
+  "type": "object",
+  "properties": {
+    "pathParameters": {
+      "type": "object",
+      "properties": {
+        "memoryId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "imageId": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "required": ["memoryId", "imageId"]
+    },
+  },
+  "required": ["pathParameters"]
+}

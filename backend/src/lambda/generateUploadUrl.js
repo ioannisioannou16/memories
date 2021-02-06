@@ -8,6 +8,7 @@ const createError = require('http-errors')
 const AWS = require("aws-sdk")
 const utils = require("../utils")
 const { v4: uuid } = require("uuid")
+const inputSchema = require("../schema/generateUploadUrl.json")
 
 const docClient = new AWS.DynamoDB.DocumentClient()
 const s3 = new AWS.S3({ signatureVersion: 'v4' })
@@ -15,23 +16,6 @@ const bucketName = process.env.PHOTOS_S3_BUCKET_NAME
 const memoriesTable = process.env.MEMORIES_TABLE_NAME
 const getUrlExpiration = parseInt(process.env.GET_SIGNED_URL_EXPIRATION)
 const postUrlExpiration = parseInt(process.env.POST_SIGNED_URL_EXPIRATION)
-
-const generateUploadUrlSchema = {
-  type: "object",
-  properties: {
-    pathParameters: {
-      type: "object",
-      properties: {
-        memoryId: {
-          type: "string",
-          format: "uuid"
-        },
-      },
-      required: ["memoryId"],
-    },
-  },
-  required: ['pathParameters']
-}
 
 const handler = middy(async (event) => {
   const memoryId = event.pathParameters.memoryId
@@ -91,7 +75,7 @@ const handler = middy(async (event) => {
 
 handler
   .use(cors())
-  .use(validator({ inputSchema: generateUploadUrlSchema }))
+  .use(validator({ inputSchema }))
   .use(httpErrorHandler())
 
 module.exports = {
