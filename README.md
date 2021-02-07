@@ -33,4 +33,5 @@ Some nice to have improvements:
 1. Automatically deploy frontend to AWS S3 / CloudFront
 2. Serve images with CloudFront
 3. Add pagination when fetching user memories
+4. Update Cognito UI to match website
 
