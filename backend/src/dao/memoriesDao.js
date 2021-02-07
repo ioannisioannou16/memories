@@ -38,7 +38,7 @@ const addMemoryImage = async (userId, memoryId, imageId) => {
 }
 
 const toJSMemory = (memory) => {
-  if (!memory) return memory;
+  if (!memory) return memory
   return {
     ...memory,
     images: memory.images ? memory.images.values : []
