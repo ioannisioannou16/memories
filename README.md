@@ -24,7 +24,7 @@ You can deploy the app to AWS by doing:
 
 This will use your default AWS credentials. If you want to use different profile then run `AWS_PROFILE=my-aws-profile sls deploy`.
 ### Frontend
-1. Edit the [config](./frontend/src/config)
+1. Edit [config](./frontend/src/config) with the backend details
 2. Run `npm install`
 3. Run `npm start`
 
