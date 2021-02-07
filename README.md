@@ -3,7 +3,7 @@ A Serverless app to keep your memories.
 
 The app allows you to create an account, and create, retrieve, update and delete memories.
 
-The backend is a serverless app built using:
+The backend is a Serverless app built using:
 1. Serverless Framework 
 2. AWS Lambda 
 3. AWS Cognito for user authentication
