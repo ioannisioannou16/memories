@@ -1,5 +1,5 @@
 # Memories
-An app to keep your memories.
+A Serverless app app to keep your memories.
 
 The app allows you to create an account, and create, retrieve, update and delete memories.
 
