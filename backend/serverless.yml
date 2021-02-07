@@ -1,4 +1,4 @@
-service: memories-app
+service: memories-backend
 frameworkVersion: '2'
 
 plugins:
@@ -22,10 +22,12 @@ provider:
         - xray:PutTraceSegments
         - xray:PutTelemetryRecords
       Resource: "*"
+  apiGateway:
+    shouldStartNameWithService: true
   environment:
-    MEMORIES_TABLE_NAME: memories-table-memories-app-${self:provider.stage}
-    MEMORIES_BY_USER_INDEX_NAME: memories-by-user-index-memories-app-${self:provider.stage}
-    PHOTOS_S3_BUCKET_NAME: memories-photos-bucket-memories-app-${self:provider.stage}
+    MEMORIES_TABLE_NAME: memories-table-memories-backend-${self:provider.stage}
+    MEMORIES_BY_USER_INDEX_NAME: memories-by-user-index-memories-backend-${self:provider.stage}
+    PHOTOS_S3_BUCKET_NAME: memories-photos-bucket-memories-backend-${self:provider.stage}
     POST_SIGNED_URL_EXPIRATION: 300
     GET_SIGNED_URL_EXPIRATION: 86400
 functions:
@@ -164,7 +166,7 @@ resources:
         - ApiGatewayRestApi
       Type: AWS::ApiGateway::Authorizer
       Properties:
-        Name: memories-app-api-gateway-authorizer-${self:provider.stage}
+        Name: memories-backend-api-gateway-authorizer-${self:provider.stage}
         IdentitySource: method.request.header.Authorization
         RestApiId:
           Ref: ApiGatewayRestApi
@@ -183,7 +185,7 @@ resources:
     CognitoUserPool:
       Type: "AWS::Cognito::UserPool"
       Properties:
-        UserPoolName: memories-app-user-pool-${self:provider.stage}
+        UserPoolName: memories-backend-user-pool-${self:provider.stage}
         UsernameAttributes:
           - email
         AutoVerifiedAttributes:
@@ -200,7 +202,7 @@ resources:
     CognitoUserPoolClient:
       Type: "AWS::Cognito::UserPoolClient"
       Properties:
-        ClientName: memories-app-user-pool-client-${self:provider.stage}
+        ClientName: memories-backend-user-pool-client-${self:provider.stage}
         SupportedIdentityProviders: ["COGNITO"]
         AllowedOAuthFlowsUserPoolClient: true
         AllowedOAuthFlows: ["implicit"]
@@ -216,7 +218,7 @@ resources:
     CognitoUserPoolDomain:
       Type: AWS::Cognito::UserPoolDomain
       Properties:
-        Domain: memories-app-${self:provider.stage}
+        Domain: memories-backend-${self:provider.stage}
         UserPoolId:
           Ref: CognitoUserPool
     PhotosBucket:

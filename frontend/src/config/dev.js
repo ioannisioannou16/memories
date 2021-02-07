@@ -1,8 +1,8 @@
 export default {
-  backendUrl: "https://vcigstsrqg.execute-api.eu-central-1.amazonaws.com/dev",
+  backendUrl: "https://1dmktguu5g.execute-api.eu-central-1.amazonaws.com/dev",
   cognito: {
-    domain: "https://memories-app-dev.auth.eu-central-1.amazoncognito.com",
-    client_id: "5uavpdj6u8d45rd602uev0v3ho",
+    domain: "https://memories-backend-dev.auth.eu-central-1.amazoncognito.com",
+    client_id: "6643ejafbpfi16hpn2u3la2ssn",
     redirect_uri: "http://localhost:3000/callback",
     logout_uri: "http://localhost:3000/logout"
   }
